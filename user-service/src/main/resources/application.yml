@@ -4,6 +4,12 @@ server:
 spring:
   application:
     name: user-service
+  cache:
+    type: none
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.cache.CacheAutoConfiguration
 
   datasource:
     url: jdbc:mysql://localhost:3306/user_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
@@ -31,8 +37,7 @@ spring:
           max-idle: 8
           min-idle: 0
 
-  cache:
-    type: redis
+
 
 eureka:
   client:
@@ -45,3 +50,5 @@ logging:
   level:
     com.microservices.user: DEBUG
     org.springframework.cache: TRACE
+
+

@@ -1,4 +1,7 @@
 package com.microservices.user.exception;
 
-public class DuplicateResourceException  extends Throwable{
+public class DuplicateResourceException extends RuntimeException {
+    public DuplicateResourceException(String message) {
+        super(message);
+    }
 }

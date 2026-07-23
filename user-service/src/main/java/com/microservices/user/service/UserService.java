@@ -5,15 +5,13 @@ import com.microservices.user.dto.UserResponse;
 import com.microservices.user.entity.User;
 import com.microservices.user.exception.ResourceNotFoundException;
 import com.microservices.user.repository.UserRepository;
-import com.sun.jdi.request.DuplicateRequestException;
-import jakarta.persistence.Cacheable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -40,10 +38,11 @@ public class UserService {
         User user = User.builder()
                 .username(request.getUsername())
                 .email(request.getEmail())
-//                .password(request.getPassword()) // In production, use password encoder
+                .password(request.getPassword()) // In production, use password encoder
                 .fullName(request.getFullName())
                 .phoneNumber(request.getPhoneNumber())
                 .status(User.UserStatus.ACTIVE)
+                .createdAt(LocalDateTime.now())
                 .build();
 
         User savedUser = userRepository.save(user);
@@ -139,11 +138,16 @@ public class UserService {
     }
 
     private void cacheUser(User user) {
-        String key = "users::" + user.getId();
-        redisTemplate.opsForValue().set(key, mapToResponse(user), 1, TimeUnit.HOURS);
-
-        String usernameKey = "users::" + user.getUsername();
-        redisTemplate.opsForValue().set(usernameKey, mapToResponse(user), 1, TimeUnit.HOURS);
+        try {
+            redisTemplate.opsForValue().set(
+                    "user:" + user.getId(),
+                    user,
+                    1,
+                    TimeUnit.HOURS
+            );
+        } catch (Exception e) {
+            log.warn("Failed to cache user {} in Redis - continuing without cache", user.getId(), e);
+        }
     }
 
     private UserResponse mapToResponse(User user) {
