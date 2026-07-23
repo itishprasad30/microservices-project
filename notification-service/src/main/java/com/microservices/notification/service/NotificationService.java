@@ -1,14 +1,13 @@
 package com.microservices.notification.service;
 
-
 import com.microservices.notification.dto.NotificationRequest;
 import com.microservices.notification.dto.NotificationResponse;
 import com.microservices.notification.entity.Notification;
+import com.microservices.notification.exception.ResourceNotFoundException;
 import com.microservices.notification.repository.NotificationRepository;
-import jakarta.persistence.Cacheable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.common.errors.ResourceNotFoundException;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,11 +19,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class NotificationService {
-    private NotificationRepository notificationRepository;
+    private final NotificationRepository notificationRepository;  // Added 'final'
 
     @Transactional
-    public NotificationResponse createNotification(NotificationRequest request){
-        log.info("Creating notification for user : {}" , request.getUserId());
+    public NotificationResponse createNotification(NotificationRequest request) {
+        log.info("Creating notification for user: {}", request.getUserId());
 
         Notification notification = Notification.builder()
                 .userId(request.getUserId())
@@ -36,15 +35,14 @@ public class NotificationService {
                 .status(Notification.NotificationStatus.PENDING)
                 .build();
 
-        Notification saveNotification = notificationRepository.save(notification);
-        log.info("Notification created with Id : {}" , saveNotification.getId());
+        Notification savedNotification = notificationRepository.save(notification);  // Fixed variable name
+        log.info("Notification created with Id: {}", savedNotification.getId());
 
         // In real implementation, send notification via email/SMS/push
         sendNotification(savedNotification);
 
         return mapToResponse(savedNotification);
     }
-
 
     @Cacheable(value = "notifications", key = "#id")
     public NotificationResponse getNotificationById(Long id) {
